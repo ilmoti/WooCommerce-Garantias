@@ -1,12 +1,24 @@
 <?php
 /**
- * Auto-Deploy Script para WooCommerce Garantías
- * Maneja correctamente la estructura del repositorio
+ * Auto-Deploy Script Unificado
+ * Maneja múltiples plugins automáticamente detectando el repositorio
  */
 
 // Token de seguridad (CAMBIAR EN PRODUCCIÓN)
 define('DEPLOY_TOKEN', '6f59d1e63f55b18b682a876d1dc17d1b780216a7102c98e63761d747d9762dd9');
 define('DEPLOY_LOG', __DIR__ . '/deploy.log');
+
+// Configuración de plugins
+$PLUGINS = [
+    'forecast-compras' => [
+        'repo' => 'forecast-compras',
+        'dir' => __DIR__ . '/wp-content/plugins/forecast-compras',
+    ],
+    'WooCommerce-Garantias' => [
+        'repo' => 'WooCommerce-Garantias',
+        'dir' => __DIR__ . '/wp-content/plugins/WooCommerce-Garantias',
+    ],
+];
 
 function deploy_log($message) {
     $timestamp = date('Y-m-d H:i:s');
@@ -37,8 +49,9 @@ if ($event !== 'push') {
 // Parsear payload
 $data = json_decode($payload, true);
 $branch = str_replace('refs/heads/', '', $data['ref'] ?? '');
+$repo_name = $data['repository']['name'] ?? '';
 
-deploy_log("Push recibido en branch: {$branch}");
+deploy_log("Push recibido en repositorio: {$repo_name}, branch: {$branch}");
 
 if ($branch !== 'main') {
     deploy_log("Branch ignorado: {$branch}");
@@ -47,8 +60,25 @@ if ($branch !== 'main') {
     exit;
 }
 
-// Ruta del plugin (AJUSTAR SEGÚN TU SERVIDOR)
-$plugin_dir = __DIR__ . '/wp-content/plugins/WooCommerce-Garantias';
+// Detectar qué plugin actualizar basado en el repositorio
+$plugin_config = null;
+foreach ($PLUGINS as $key => $config) {
+    if ($config['repo'] === $repo_name) {
+        $plugin_config = $config;
+        $plugin_name = $key;
+        break;
+    }
+}
+
+if (!$plugin_config) {
+    deploy_log("ERROR: Repositorio no configurado: {$repo_name}");
+    http_response_code(404);
+    echo json_encode(['status' => 'error', 'message' => 'Repository not configured']);
+    exit;
+}
+
+$plugin_dir = $plugin_config['dir'];
+deploy_log("Plugin detectado: {$plugin_name}");
 
 if (!is_dir($plugin_dir)) {
     deploy_log("ERROR: Directorio no existe: {$plugin_dir}");
@@ -90,9 +120,9 @@ foreach ($commands as $cmd) {
 }
 
 // NUEVO: Si se creó carpeta duplicada, mover archivos
-$duplicate_dir = $plugin_dir . '/WooCommerce-Garantias';
+$duplicate_dir = $plugin_dir . '/' . $plugin_name;
 if (is_dir($duplicate_dir)) {
-    deploy_log("Detectada carpeta duplicada, moviendo archivos...");
+    deploy_log("Detectada carpeta duplicada: {$duplicate_dir}, moviendo archivos...");
 
     // Mover archivos de la carpeta interna a la raíz
     $files = new RecursiveIteratorIterator(
