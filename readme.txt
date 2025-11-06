@@ -1,6 +1,8 @@
 Resumen del Plugin de Garantías y Sistema RMA
 Plugin Principal: WooCommerce Garantías
 Plugin que gestiona reclamos de garantía de productos con flujo completo de aprobación/rechazo.
+
+✅ Sistema de deploy automático configurado - Webhook activo
 Nueva Funcionalidad: Sistema RMA (Return Merchandise Authorization)
 Propósito: Cuando un reclamo es rechazado definitivamente, permitir que el cliente recupere su producto defectuoso.
 Archivos Clave del Sistema RMA:
