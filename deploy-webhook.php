@@ -4,21 +4,9 @@
  * Maneja múltiples plugins automáticamente detectando el repositorio
  */
 
-// Token de seguridad (CAMBIAR EN PRODUCCIÓN)
+// Token de seguridad
 define('DEPLOY_TOKEN', '6f59d1e63f55b18b682a876d1dc17d1b780216a7102c98e63761d747d9762dd9');
 define('DEPLOY_LOG', __DIR__ . '/deploy.log');
-
-// Configuración de plugins
-$PLUGINS = [
-    'forecast-compras' => [
-        'repo' => 'forecast-compras',
-        'dir' => '/home/lss.wifixargentina.com.ar/public_html/wp-content/plugins/forecast-compras',
-    ],
-    'WooCommerce-Garantias' => [
-        'repo' => 'WooCommerce-Garantias',
-        'dir' => '/home/lss.wifixargentina.com.ar/public_html/wp-content/plugins/WooCommerce-Garantias',
-    ],
-];
 
 function deploy_log($message) {
     $timestamp = date('Y-m-d H:i:s');
@@ -60,24 +48,20 @@ if ($branch !== 'main') {
     exit;
 }
 
-// Detectar qué plugin actualizar basado en el repositorio
-$plugin_config = null;
-foreach ($PLUGINS as $key => $config) {
-    if ($config['repo'] === $repo_name) {
-        $plugin_config = $config;
-        $plugin_name = $key;
-        break;
-    }
-}
-
-if (!$plugin_config) {
+// Determinar directorio del plugin según el repositorio
+if ($repo_name === 'forecast-compras') {
+    $plugin_dir = __DIR__ . '/wp-content/plugins/forecast-compras';
+    $plugin_name = 'forecast-compras';
+} elseif ($repo_name === 'WooCommerce-Garantias') {
+    $plugin_dir = __DIR__ . '/wp-content/plugins/WooCommerce-Garantias';
+    $plugin_name = 'WooCommerce-Garantias';
+} else {
     deploy_log("ERROR: Repositorio no configurado: {$repo_name}");
     http_response_code(404);
     echo json_encode(['status' => 'error', 'message' => 'Repository not configured']);
     exit;
 }
 
-$plugin_dir = $plugin_config['dir'];
 deploy_log("Plugin detectado: {$plugin_name}");
 
 if (!is_dir($plugin_dir)) {
