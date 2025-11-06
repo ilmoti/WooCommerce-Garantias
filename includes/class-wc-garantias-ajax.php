@@ -729,63 +729,64 @@ public static function get_order_info() {
         }
 
         foreach ($garantias as $garantia) {
-            // Obtener el order_id asociado a esta garantía
-            $order_id = get_post_meta($garantia->ID, '_order_id', true);
-
-            // Si no hay order_id, saltar (datos inconsistentes)
-            if (!$order_id) {
-                if ($product_id == 48612) {
-                    file_put_contents($debug_file, "[" . date('Y-m-d H:i:s') . "] Garantía {$garantia->ID}: Sin order_id - SALTADA\n", FILE_APPEND);
-                    error_log("Garantía {$garantia->ID}: Sin order_id - SALTADA");
-                }
-                continue;
-            }
-
-            // Obtener la orden para verificar su fecha
-            $order = wc_get_order($order_id);
-            if (!$order) {
-                if ($product_id == 48612) {
-                    file_put_contents($debug_file, "[" . date('Y-m-d H:i:s') . "] Garantía {$garantia->ID}: Orden {$order_id} no existe - SALTADA\n", FILE_APPEND);
-                    error_log("Garantía {$garantia->ID}: Orden {$order_id} no existe - SALTADA");
-                }
-                continue;
-            }
-
-            // Verificar si la orden está dentro del período válido de garantía
-            $order_time = strtotime($order->get_date_completed() ?
-                $order->get_date_completed()->date('Y-m-d H:i:s') :
-                $order->get_date_created()->date('Y-m-d H:i:s')
-            );
-
-            // DEBUG TEMPORAL
-            if ($product_id == 48612) {
-                file_put_contents($debug_file, "[" . date('Y-m-d H:i:s') . "] Garantía {$garantia->ID}: Orden {$order_id}, Fecha: " . date('Y-m-d', $order_time) . "\n", FILE_APPEND);
-                file_put_contents($debug_file, "[" . date('Y-m-d H:i:s') . "]   ¿Dentro del período? " . ($order_time >= $fecha_limite ? 'SÍ' : 'NO') . "\n", FILE_APPEND);
-
-                error_log("Garantía {$garantia->ID}: Orden {$order_id}, Fecha: " . date('Y-m-d', $order_time));
-                error_log("  ¿Dentro del período? " . ($order_time >= $fecha_limite ? 'SÍ' : 'NO'));
-            }
-
-            // Solo contar garantías de órdenes dentro del período válido
-            if ($order_time < $fecha_limite) {
-                if ($product_id == 48612) {
-                    file_put_contents($debug_file, "[" . date('Y-m-d H:i:s') . "]   SALTADA por fecha antigua\n", FILE_APPEND);
-                    error_log("  SALTADA por fecha antigua");
-                }
-                continue;
-            }
-
-            // Contar los items de esta garantía
+            // Obtener los items de esta garantía
             $items = get_post_meta($garantia->ID, '_items_reclamados', true) ?: [];
-            foreach ($items as $item) {
-                if (intval($item['producto_id']) === $product_id) {
-                    $cantidad_item = intval($item['cantidad'] ?? 1);
-                    $cantidad_reclamada += $cantidad_item;
 
+            if ($product_id == 48612) {
+                file_put_contents($debug_file, "[" . date('Y-m-d H:i:s') . "] Garantía {$garantia->ID}: " . count($items) . " items\n", FILE_APPEND);
+            }
+
+            foreach ($items as $item) {
+                // Verificar si este item es del producto que buscamos
+                if (intval($item['producto_id']) !== $product_id) {
+                    continue;
+                }
+
+                // Obtener el order_id del ITEM (no del post de garantía)
+                $order_id = $item['order_id'] ?? null;
+
+                if (!$order_id) {
                     if ($product_id == 48612) {
-                        file_put_contents($debug_file, "[" . date('Y-m-d H:i:s') . "]   Item encontrado: cantidad {$cantidad_item}\n", FILE_APPEND);
-                        error_log("  Item encontrado: cantidad {$cantidad_item}");
+                        file_put_contents($debug_file, "[" . date('Y-m-d H:i:s') . "]   Item sin order_id - SALTADO\n", FILE_APPEND);
                     }
+                    continue;
+                }
+
+                // Obtener la orden para verificar su fecha
+                $order = wc_get_order($order_id);
+                if (!$order) {
+                    if ($product_id == 48612) {
+                        file_put_contents($debug_file, "[" . date('Y-m-d H:i:s') . "]   Orden {$order_id} no existe - SALTADO\n", FILE_APPEND);
+                    }
+                    continue;
+                }
+
+                // Verificar si la orden está dentro del período válido de garantía
+                $order_time = strtotime($order->get_date_completed() ?
+                    $order->get_date_completed()->date('Y-m-d H:i:s') :
+                    $order->get_date_created()->date('Y-m-d H:i:s')
+                );
+
+                // DEBUG TEMPORAL
+                if ($product_id == 48612) {
+                    file_put_contents($debug_file, "[" . date('Y-m-d H:i:s') . "]   Item con orden {$order_id}, Fecha: " . date('Y-m-d', $order_time) . "\n", FILE_APPEND);
+                    file_put_contents($debug_file, "[" . date('Y-m-d H:i:s') . "]   ¿Dentro del período? " . ($order_time >= $fecha_limite ? 'SÍ' : 'NO') . "\n", FILE_APPEND);
+                }
+
+                // Solo contar items de órdenes dentro del período válido
+                if ($order_time < $fecha_limite) {
+                    if ($product_id == 48612) {
+                        file_put_contents($debug_file, "[" . date('Y-m-d H:i:s') . "]   SALTADO por fecha antigua\n", FILE_APPEND);
+                    }
+                    continue;
+                }
+
+                // Contar este item
+                $cantidad_item = intval($item['cantidad'] ?? 1);
+                $cantidad_reclamada += $cantidad_item;
+
+                if ($product_id == 48612) {
+                    file_put_contents($debug_file, "[" . date('Y-m-d H:i:s') . "]   ✓ CONTADO: cantidad {$cantidad_item}\n", FILE_APPEND);
                 }
             }
         }
