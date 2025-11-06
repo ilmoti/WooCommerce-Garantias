@@ -154,11 +154,13 @@ if (function_exists('opcache_reset')) {
     deploy_log("✅ OPcache limpiado");
 }
 
-// Limpiar garantias-debug.log si existe
-$debug_log = WP_CONTENT_DIR . '/garantias-debug.log';
-if (file_exists($debug_log)) {
-    unlink($debug_log);
-    deploy_log("✅ Debug log limpiado");
+// Limpiar garantias-debug.log si existe (solo para WooCommerce-Garantias)
+if ($plugin_name === 'WooCommerce-Garantias') {
+    $debug_log = __DIR__ . '/wp-content/garantias-debug.log';
+    if (file_exists($debug_log)) {
+        unlink($debug_log);
+        deploy_log("✅ Debug log limpiado");
+    }
 }
 
 if ($success) {
