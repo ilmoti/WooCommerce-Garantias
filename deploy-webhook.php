@@ -12,11 +12,11 @@ define('DEPLOY_LOG', __DIR__ . '/deploy.log');
 $PLUGINS = [
     'forecast-compras' => [
         'repo' => 'forecast-compras',
-        'dir' => __DIR__ . '/wp-content/plugins/forecast-compras',
+        'dir' => '/home/lss.wifixargentina.com.ar/public_html/wp-content/plugins/forecast-compras',
     ],
     'WooCommerce-Garantias' => [
         'repo' => 'WooCommerce-Garantias',
-        'dir' => __DIR__ . '/wp-content/plugins/WooCommerce-Garantias',
+        'dir' => '/home/lss.wifixargentina.com.ar/public_html/wp-content/plugins/WooCommerce-Garantias',
     ],
 ];
 
