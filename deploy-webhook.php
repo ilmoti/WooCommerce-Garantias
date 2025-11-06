@@ -158,7 +158,7 @@ if (function_exists('opcache_reset')) {
 if ($plugin_name === 'WooCommerce-Garantias') {
     $debug_log = __DIR__ . '/wp-content/garantias-debug.log';
     if (file_exists($debug_log)) {
-        unlink($debug_log);
+        @unlink($debug_log);
         deploy_log("✅ Debug log limpiado");
     }
 }
