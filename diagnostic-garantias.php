@@ -51,7 +51,8 @@ echo "<p>Fecha límite: " . date('Y-m-d', $fecha_limite) . "</p>";
 echo "<hr>";
 
 foreach ($garantias as $garantia) {
-    echo "<h3>Garantía #{$garantia->ID}</h3>";
+    $codigo_unico = get_post_meta($garantia->ID, '_codigo_unico', true);
+    echo "<h3>Garantía #{$garantia->ID}" . ($codigo_unico ? " - $codigo_unico" : '') . "</h3>";
 
     // Obtener items
     $items = get_post_meta($garantia->ID, '_items_reclamados', true) ?: [];
