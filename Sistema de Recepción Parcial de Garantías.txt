@@ -1,0 +1,288 @@
+ RESUMEN COMPLETO: Sistema de Recepción Parcial de Garantías - WooCommerce
+🎯 OBJETIVO DEL PROYECTO
+Implementar un sistema que permita recibir parcialmente los items de una garantía, procesando lo recibido y manteniendo pendiente lo faltante con auto-rechazo después de 7 días.
+📊 FLUJO DE NEGOCIO
+
+Cliente reclama 10 unidades (tracking ABC123)
+WiFix recibe solo 6 unidades
+Sistema divide automáticamente:
+
+Item A: 6 unidades [RECIBIDO] - Se procesan
+Item B: 4 unidades [ESPERANDO_RECEPCION] - Timer 7 días
+
+
+Si pasan 7 días: Estado cambia a [RECHAZADO_NO_RECIBIDO]
+
+🔧 ARCHIVOS CREADOS
+1. class-wc-garantias-recepcion-parcial.php
+
+Lógica principal del sistema
+Función procesar_recepcion_parcial() que divide items
+Funciones para auto-rechazo, extensión de plazo, rechazo manual
+Handlers AJAX para todas las operaciones
+Función notificar_recepcion_parcial() para emails
+
+2. class-wc-garantias-recepcion-parcial-ui.php
+
+Interfaz de usuario y modales
+Modal de recepción con preview de división
+Botones especiales para items esperando (días restantes, extender, rechazar)
+Funciones de renderizado para badges y resúmenes
+
+3. class-wc-garantias-recepcion-parcial-cron.php
+
+Sistema de tareas programadas
+Auto-rechazo diario a las 2 AM
+Recordatorios cada 6 horas
+Página de estado del cron en admin
+
+📝 ARCHIVOS MODIFICADOS
+1. class-wc-garantias-admin-view.php
+
+Agregado procesamiento de recepción parcial en procesar_acciones_post()
+Nueva función procesar_recepcion_parcial_post()
+Agregados estados: 'parcialmente_recibido', 'esperando_recepcion', 'rechazado_no_recibido'
+Actualizada función verificar_generar_cupon() para manejar nuevos estados
+Estado 'esperando_recepcion' agregado a estados permitidos en marcar_items_recibidos()
+
+2. class-wc-garantias-admin-view-render.php
+
+Agregados nuevos estados al mapeo
+Nuevos filtros en la tabla: "Esperando Recepción" y "Rechazado - No Recibido"
+Botón "Recibir" para items pendientes y esperando_recepcion
+Integración del modal de recepción parcial
+Renderizado de botones especiales para items esperando
+Resumen de recepción parcial en la vista
+
+3. class-wc-garantias-emails.php
+
+Agregados 4 nuevos templates de email:
+
+recepcion_parcial: Notifica división de items
+recordatorio_recepcion: Avisa cuando quedan pocos días
+rechazo_no_recibido: Informa rechazo automático
+rechazo_manual_parcial: Notifica rechazo manual
+
+
+Registrados en settings y agregados templates por defecto
+Mapeados para WhatsApp
+
+🐛 PROBLEMAS RESUELTOS
+
+Error crítico al cargar cron: Se debe quitar la inicialización al final del archivo cron
+Botón "Recibir" duplicado: Solo mostrar en la columna principal, no en render_botones_esperando
+Emails no llegaban: Faltaba llamar a notificar_recepcion_parcial() en la función principal
+Límite de cantidad: Permitir recibir más del doble para manejar excesos grandes
+
+🔑 PUNTOS CLAVE DE INTEGRACIÓN
+
+Estados nuevos:
+
+esperando_recepcion: Items pendientes con timer
+rechazado_no_recibido: Rechazado por no llegar
+parcialmente_recibido: Estado general de garantía
+
+
+Constantes necesarias:
+phpdefine('WC_GARANTIAS_FILE', __FILE__);
+
+Carga de archivos (en el plugin principal):
+phprequire_once 'includes/class-wc-garantias-recepcion-parcial.php';
+require_once 'includes/class-wc-garantias-recepcion-parcial-ui.php';
+require_once 'includes/class-wc-garantias-recepcion-parcial-cron.php';
+
+Estructura de datos del item:
+php'recepcion_parcial' => [...],
+'auto_rechazo' => [...],
+'cantidad_original' => 10,
+'cantidad_recibida' => 6,
+'cantidad_pendiente' => 4
+
+
+⚙️ FUNCIONALIDADES IMPLEMENTADAS
+
+✅ División automática de items al recibir parcialmente
+✅ Auto-rechazo después de 7 días sin recepción
+✅ Extensión de plazo (máximo 2 veces, 7 días cada una)
+✅ Rechazo manual de items pendientes
+✅ Manejo de excesos (retorno automático al cliente)
+✅ Notificaciones por email en cada etapa
+✅ Modal interactivo con preview de división
+✅ Contador visual de días restantes
+✅ Página de estado del cron
+✅ Historial completo de eventos
+
+📧 NOTIFICACIONES
+
+Email al recibir parcialmente (muestra división)
+Recordatorio cuando quedan 2 días
+Notificación de rechazo automático
+Integración con WhatsApp existente
+
+🎨 UI/UX
+
+Modal con preview en tiempo real
+Badges visuales para identificar items
+Contador de días con colores (verde/naranja/rojo)
+Resumen visual del estado de recepción
+
+Este sistema está completamente funcional y probado. Permite manejar recepciones parciales de manera eficiente, automatizando el proceso y manteniendo informado al cliente en todo momento.
+
+----------------------
+FRONTEND
+ PROYECTO REFINADO: Sistema de Recepción Parcial
+1. Contador de Días - Vista Cliente
+Estado del Item: "Esperando Recepcin (5 días restantes)"
+[Botón: Cancelar Envío] -> Rechaza automáticamente sin apelación
+2. Botn Cancelar para Cliente
+Cuando el cliente sabe que no enviará los items faltantes:
+Cliente ve: Item XYZ - Esperando Recepción (4 días)
+Acciones: [Cancelar] 
+↓ Click en Cancelar
+Modal: "Confirmas que NO enviarás estos items?"
+       "Se rechazarán definitivamente sin posibilidad de apelación"
+       [Sí, cancelar] [No, mantener]
+↓
+Item cambia a: "Rechazado - Cancelado por Cliente"
+3. Sobre "Reportar problema de envío" (aclaración)
+Me refería a si el cliente tiene problemas para enviar (ej: no consigue caja, correo cerrado, etc). Pero NO es necesario, lo descartamos.
+4. Vista Detallada de Recepción Parcial
+Para el Cliente:
+┌───────────────────────────────────────────
+│ ⚠️ Recepción Parcial - Garantía GRT-20240115    │
+├──────────────────────────────────────────┤
+│ Enviaste: 10 unidades de iPhone 13              │
+│ ✅ Recibimos: 6 unidades                        │
+│ ⏳ Esperando: 4 unidades                        │
+│                                                  │
+│ Tienes 7 días para enviar las unidades          │
+│ faltantes o serán rechazadas automáticamente.   │
+│                                                  │
+│ Tracking original: ABC123                        │
+───────────────────────────────────────────┘
+En la Tabla de Items:
+┌─────────────────────────────────────────────────────────┐
+│ Código         Producto    │ Cant │ Estado                     │
+├─────────────────────────────────────────────────────────┤
+│ GRT-ITEM-001  │ iPhone 13   │  6   │  Recibido               
+│ GRT-ITEM-001-P│ iPhone 13     4   │ ⏳ Esperando (5 días)     │
+│                            │      │ [Cancelar envío]          │
+└─────────────────────────────────────────────────────────┘
+🔄 Flujo Completo con Acciones del Cliente
+Caso A: Cliente Cancela el Envío
+1. Cliente ve: "4 unidades - Esperando Recepción (5 días)"
+2. Click en [Cancelar envío]
+3. Confirmación: "¿Seguro? No podrás apelar"
+4. Sistema:
+   - Estado → "rechazado_no_recibido"
+   - Motivo  "Cancelado por el cliente"
+   - Permite crear nueva garantía para esas 4 unidades
+Caso B: Auto-Rechazo por Tiempo
+1. Pasan 7 días sin recibir
+2. Sistema automáticamente:
+   - Estado → "rechazado_no_recibido"
+   - Motivo → "No recibido en plazo"
+   - Email al cliente informando
+Caso C: Cliente Envía Parcialmente Otra Vez
+1. De las 4 pendientes, llegan solo 2
+2. Sistema divide nuevamente:
+   - 2 unidades → "recibido"
+   - 2 unidades  "esperando_recepcion" (nuevo plazo 7 días)
+ Notificaciones Mejoradas
+Email 1: Recepción Parcial (Inmediato)
+Asunto: ⚠️ Recepción Parcial - Faltan productos
+
+Hola {cliente},
+
+Recibimos tu paquete pero faltan algunos items:
+
+RECIBIDO:
+✅ 6 unidades de iPhone 13
+
+FALTANTE:
+ 4 unidades de iPhone 13
+
+ACCIONES DISPONIBLES:
+- Enviar los 4 faltantes en los próximos 7 días
+- Cancelar el envo desde tu cuenta (sin apelacin)
+- Esperar el rechazo automático y crear nueva garantía
+
+[Ver Mi Garantía] [Cancelar Items Faltantes]
+Email 2: Recordatorio Día 5
+Asunto: ⏰ Último aviso - 2 días para enviar items
+
+Quedan 2 das para enviar:
+- 4 unidades de iPhone 13
+
+Si no los envías o cancelas, serán rechazados automáticamente.
+
+[Cancelar Envío] [Ver Tracking]
+🎨 Interfaz Cliente - Elementos Nuevos
+1. Badge de División en la Tabla
+html<span class="badge bg-info">DIVISIÓN</span> <!-- Item original -->
+<span class="badge bg-warning">PENDIENTE</span> <!-- Item esperando -->
+2. Modal de Cancelación
+javascriptfunction cancelarEnvioItem(codigoItem) {
+    if (confirm('¿Confirmas que NO enviarás estos items?\n\n' +
+                'Se rechazarán sin posibilidad de apelación.\n' +
+                'Podrás crear una nueva garantía después.')) {
+        // AJAX para cancelar
+        $.ajax({
+            url: ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'cancelar_envio_item',
+                codigo_item: codigoItem,
+                nonce: '...'
+            },
+            success: function(response) {
+                alert('Items cancelados. Puedes crear una nueva garantía.');
+                location.reload();
+            }
+        });
+    }
+}
+3. Indicador Visual de Parcialidad
+css.item-parcial {
+    background: linear-gradient(90deg, #fff 50%, #fff3cd 50%);
+    border-left: 4px solid #ffc107;
+}
+
+.contador-dias {
+    animation: pulse 2s infinite;
+    color: #ff6b6b;
+    font-weight: bold;
+}
+📊 Dashboard - Nueva Tarjeta
+html<div class="stat-card orange">
+    <div class="stat-icon">⏳</div>
+    <div class="stat-number">4</div>
+    <div class="stat-label">Items Esperando Recepción</div>
+    <div class="stat-action">
+        <a href="#pending-items">Ver detalles</a>
+    </div>
+</div>
+ Validaciones Adicionales
+
+No permitir cancelar si quedan < 2 días (muy tarde, esperar auto-rechazo)
+Registro de quién canceló (cliente vs sistema)
+Bloquear múltiples divisiones del mismo item (máximo 2 niveles)
+Histórico de divisiones visible en timeline
+
+🔐 Permisos y Restricciones
+
+Cliente puede: Cancelar envío, ver detalles, crear nueva garantía post-rechazo
+Cliente NO puede: Extender plazo, cambiar cantidad, apelar items no recibidos
+Sistema automático: Rechaza a los 7 días, envía emails, actualiza estados
+
+
+¿Confirmamos este proyecto completo?
+Con estos ajustes:
+
+✅ Cliente ve das restantes
+✅ Puede cancelar el envío voluntariamente
+ Ve claramente qué faltó recibir
+✅ Notificaciones claras y accionables
+✅ Dashboard actualizado con nueva estadística
+
+Procedemos a crear los archivos con estas especificaciones?

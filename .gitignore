@@ -1,0 +1,38 @@
+# WordPress
+*.log
+.htaccess
+
+# Plugin development
+node_modules/
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Composer
+/vendor/
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*~
+
+# Deploy
+deploy.log
+
+# Debug logs
+garantias-debug.log
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Desktop.ini

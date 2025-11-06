@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+/* Estilos mejorados para la tabla de garantías */
+
+/* Container principal */
+.garantias-admin-improved {
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 20px 0;
+}
+
+/* Header mejorado */
+.garantias-admin-improved h1 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.garantias-admin-improved h1 i {
+    color: #007cba;
+}
+
+/* Cards y contenedores */
+.garantias-admin-improved .card {
+    background: #fff;
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.04), 0 8px 16px rgba(0,0,0,0.08);
+    overflow: hidden;
+    transition: box-shadow 0.3s ease;
+}
+
+.garantias-admin-improved .card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.08), 0 12px 24px rgba(0,0,0,0.12);
+}
+
+.garantias-admin-improved .card-body {
+    padding: 20px;
+}
+
+/* Filtros modernos */
+.garantias-filters {
+    background: linear-gradient(135deg, #f5f7fa 0%, #f8f9fc 100%);
+    margin-bottom: 30px !important;
+}
+
+.garantias-filters .form-label {
+    font-weight: 600;
+    color: #4a5568;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+/* Select2 personalizado */
+.select2-container--default .select2-selection--multiple {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 4px;
+    min-height: 42px;
+}
+
+.select2-container--default .select2-selection--single {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+}
+
+/* Botones mejorados */
+.garantias-admin-improved .btn {
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border: none;
+}
+
+.garantias-admin-improved .btn-primary {
+    background: #007cba;
+    box-shadow: 0 2px 4px rgba(0, 124, 186, 0.2);
+}
+
+.garantias-admin-improved .btn-primary:hover {
+    background: #005a87;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 124, 186, 0.3);
+}
+
+/* Tabla mejorada */
+#garantias-table {
+    font-size: 14px;
+}
+
+#garantias-table thead th {
+    background: #f8f9fc;
+    border-bottom: 2px solid #e2e8f0;
+    color: #4a5568;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    padding: 15px 10px;
+}
+
+#garantias-table tbody tr {
+    transition: all 0.2s ease;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+#garantias-table tbody tr:hover {
+    background: #f8fbff;
+    transform: scale(1.01);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+/* Estados con iconos */
+.garantias-admin-improved .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Comentarios inline */
+.comentario-wrapper {
+    max-width: 200px;
+}
+
+.comentario-wrapper .comentario-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.comentario-wrapper input {
+    min-width: 150px;
+}
+
+/* Acciones */
+.garantias-admin-improved .btn-group {
+    display: flex;
+    gap: 4px;
+}
+
+.garantias-admin-improved .btn-group .btn {
+    padding: 6px 10px;
+    font-size: 13px;
+}
+
+.garantias-admin-improved .btn-info {
+    background: #17a2b8;
+    color: white;
+}
+
+.garantias-admin-improved .btn-danger {
+    background: #dc3545;
+    color: white;
+}
+
+/* Modal mejorado */
+.modal-content {
+    border: none;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #007cba 0%, #005a87 100%);
+    color: white;
+    border: none;
+}
+
+.modal-header .btn-close {
+    filter: brightness(0) invert(1);
+}
+
+/* Vista rápida */
+.garantia-quick-view {
+    padding: 10px;
+}
+
+.garantia-quick-view h6 {
+    color: #007cba;
+    font-weight: 600;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.garantia-quick-view .table {
+    font-size: 14px;
+}
+
+/* Alertas de acciones en lote */
+.bulk-actions-container .alert {
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* DataTables personalización */
+.dataTables_wrapper .dataTables_paginate .paginate_button {
+    padding: 5px 12px;
+    margin: 0 2px;
+    border-radius: 6px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    color: #4a5568;
+    transition: all 0.2s ease;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+    background: #007cba;
+    color: white;
+    border-color: #007cba;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.current {
+    background: #007cba;
+    color: white;
+    border-color: #007cba;
+}
+
+.dataTables_wrapper .dataTables_filter input {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 8px 15px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.dataTables_wrapper .dataTables_filter input:focus {
+    border-color: #007cba;
+    box-shadow: 0 0 0 3px rgba(0, 124, 186, 0.1);
+    outline: none;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .garantias-filters .row {
+        flex-direction: column;
+    }
+    
+    .garantias-filters .col-md-3,
+    .garantias-filters .col-md-2 {
+        width: 100%;
+        margin-bottom: 15px;
+    }
+}
+
+@media (max-width: 768px) {
+    #garantias-table {
+        font-size: 12px;
+    }
+    
+    .garantias-admin-improved .btn-group {
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    .garantias-admin-improved .btn-group .btn {
+        width: 100%;
+        margin-bottom: 5px;
+    }
+    
+    .comentario-wrapper {
+        max-width: 120px;
+    }
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.garantias-admin-improved .card {
+    animation: fadeIn 0.5s ease;
+}
+
+/* Loading overlay */
+.dataTables_processing {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    background: white !important;
+    border: none !important;
+    border-radius: 12px !important;
+    padding: 30px 40px !important;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2) !important;
+    z-index: 9999 !important;
+}
+
+/* Checkbox personalizado */
+.garantias-admin-improved input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+/* Hover effects */
+.garantias-admin-improved .btn:hover {
+    transform: translateY(-2px);
+}
+
+.garantias-admin-improved .card:hover {
+    transform: translateY(-2px);
+}
+
+/* SweetAlert2 personalización */
+.swal2-popup {
+    border-radius: 12px !important;
+}
+
+.swal2-confirm {
+    background: #007cba !important;
+    border-radius: 6px !important;
+}
+
+.swal2-cancel {
+    background: #6c757d !important;
+    border-radius: 6px !important;
+}
+</style>
+</head>
+<body>
+<!-- Este CSS debe ser agregado en un archivo garantias-admin-improved.css en tu carpeta assets/css/ -->
+</body>
+</html>
