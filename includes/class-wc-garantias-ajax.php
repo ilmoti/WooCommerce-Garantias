@@ -226,7 +226,10 @@ class WC_Garantias_Ajax {
                     );
                 }
 
-                $productos_disponibles[] = [
+                // Crear clave única por producto + orden
+                $key = $product_id . '_' . $order->get_id();
+
+                $productos_disponibles[$key] = [
                     'value' => $product_id,  // <-- CAMBIO
                     'id' => $product_id,     // Mantener ambos por compatibilidad
                     'label' => sprintf('%s  %s (%d disponibles)%s',
@@ -242,9 +245,10 @@ class WC_Garantias_Ajax {
                 ];
             }
         }
-        
-        // Eliminar duplicados y limitar resultados
-        $productos_disponibles = array_unique($productos_disponibles, SORT_REGULAR);
+
+        // NO usar array_unique - ya están agrupados por clave única
+        // Convertir array asociativo a numérico y limitar resultados
+        $productos_disponibles = array_values($productos_disponibles);
         $productos_disponibles = array_slice($productos_disponibles, 0, 20);
         
         wp_send_json_success($productos_disponibles);
