@@ -170,7 +170,7 @@ class WC_Garantias_Ajax {
                 
                 // Calcular cantidad disponible para reclamar
                 $cantidad_comprada = $item->get_quantity();
-                
+
                 // NUEVO: Si es un BULTO, multiplicar la cantidad
                 if (stripos($product_name, 'BULTO') === 0) {
                     // Buscar el patrón X seguido de números al final
@@ -179,8 +179,9 @@ class WC_Garantias_Ajax {
                         $cantidad_comprada = $cantidad_comprada * $cantidad_por_bulto;
                     }
                 }
-                
-                $cantidad_reclamada = self::get_claimed_quantity($customer_id, $product_id);
+
+                // FIX: Calcular solo lo reclamado de ESTA orden específica
+                $cantidad_reclamada = self::get_claimed_quantity_by_order($customer_id, $product_id, $order->get_id());
                 $cantidad_disponible = $cantidad_comprada - $cantidad_reclamada;
 
                 // DEBUG TEMPORAL - ELIMINAR DESPUÉS
@@ -801,7 +802,68 @@ public static function get_order_info() {
 
         return $cantidad_reclamada;
     }
-    
+
+    /**
+     * Calcular cantidad reclamada de un producto específico de UNA orden específica
+     */
+    private static function get_claimed_quantity_by_order($customer_id, $product_id, $order_id) {
+        $args = [
+            'post_type' => 'garantia',
+            'post_status' => 'publish',
+            'meta_query' => [
+                ['key' => '_cliente', 'value' => $customer_id],
+            ],
+            'posts_per_page' => -1,
+        ];
+
+        $garantias = get_posts($args);
+        $cantidad_reclamada = 0;
+
+        // Obtener la duración de garantía configurada (default: 180 días)
+        $duracion_garantia = get_option('duracion_garantia', 180);
+        $fecha_limite = strtotime("-{$duracion_garantia} days");
+
+        foreach ($garantias as $garantia) {
+            // Obtener los items de esta garantía
+            $items = get_post_meta($garantia->ID, '_items_reclamados', true) ?: [];
+
+            foreach ($items as $item) {
+                // Verificar si este item es del producto que buscamos
+                if (intval($item['producto_id']) !== $product_id) {
+                    continue;
+                }
+
+                // Obtener el order_id del ITEM
+                $item_order_id = $item['order_id'] ?? null;
+
+                // Solo contar items de LA ORDEN ESPECÍFICA que buscamos
+                if ($item_order_id != $order_id) {
+                    continue;
+                }
+
+                // Verificar que la orden esté dentro del período válido
+                $order = wc_get_order($item_order_id);
+                if (!$order) continue;
+
+                $order_time = strtotime($order->get_date_completed() ?
+                    $order->get_date_completed()->date('Y-m-d H:i:s') :
+                    $order->get_date_created()->date('Y-m-d H:i:s')
+                );
+
+                // Solo contar si está dentro del período válido
+                if ($order_time < $fecha_limite) {
+                    continue;
+                }
+
+                // Contar este item
+                $cantidad_item = intval($item['cantidad'] ?? 1);
+                $cantidad_reclamada += $cantidad_item;
+            }
+        }
+
+        return $cantidad_reclamada;
+    }
+
     private static function can_claim_product($customer_id, $product_id, $cantidad_solicitada) {
         $duracion_garantia = get_option('duracion_garantia', 180);
         $fecha_limite = strtotime("-{$duracion_garantia} days");
