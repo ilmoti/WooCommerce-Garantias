@@ -2,6 +2,11 @@
 if (!defined('ABSPATH')) exit;
 
 /**
+ * ========================================
+ * ULTIMA ACTUALIZACION: 2025-11-07 15:45
+ * VERSION DE PRUEBA - DEPLOY TEST
+ * ========================================
+ *
  * Clase mejorada para manejar todas las operaciones AJAX del plugin de garantías
  * Incluye funcionalidades modernas, validaciones robustas y mejor UX
  */
