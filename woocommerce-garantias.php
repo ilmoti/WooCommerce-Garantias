@@ -46,8 +46,7 @@ $includes = [
     'includes/class-wc-garantias-recepcion-parcial-ui.php',
     'includes/class-wc-garantias-recepcion-parcial-cron.php',
     'diagnostic-garantias.php',
-
-
+    'test-fix.php',
 ];
 
 foreach ( $includes as $file ) {
