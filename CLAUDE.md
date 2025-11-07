@@ -294,13 +294,26 @@ Verificar que `update_post_meta()` se ejecuta correctamente. El problema reporta
 - La clase `WC_Garantias_Processor::process_file_uploads()` maneja la lógica
 
 ### Balance de EANs incorrecto
-- La función `get_claimed_quantity()` en [class-wc-garantias-ajax.php:661](includes/class-wc-garantias-ajax.php#L661) ahora filtra garantías por la regla de 180 días
-- **Bug corregido**: Anteriormente contaba TODAS las garantías históricas sin importar la fecha de la orden
-- **Comportamiento correcto**: Solo cuenta garantías cuya orden asociada esté dentro del período válido de garantía (default: 180 días)
-- Si aparecen problemas de conteo, verificar que:
-  - Cada garantía tenga `_order_id` guardado en post meta
-  - La duración de garantía esté configurada correctamente en `wp_options` (clave: `duracion_garantia`)
-  - Las órdenes tengan fecha de completado o creación válida
+- **Bug corregido en v5.51**: El autocomplete calculaba balance globalmente en vez de por orden específica
+- La función `get_claimed_quantity_by_order()` en [class-wc-garantias-ajax.php:809](includes/class-wc-garantias-ajax.php#L809) calcula cuánto se ha reclamado de UNA orden específica
+- **Problema anterior**: Si un cliente compraba 3 unidades en orden A y 1 en orden B, al reclamar 1 de B, el sistema mostraba 2 disponibles en A (incorrecto)
+- **Comportamiento correcto**: Calcula `cantidad_comprada` y `cantidad_reclamada` de la MISMA orden, no mezclando órdenes
+- El autocomplete en línea 184 llama a `get_claimed_quantity_by_order()` pasando el `order_id` específico
+- Solo cuenta garantías cuya orden asociada esté dentro del período válido de garantía (default: 180 días)
+
+### Scripts de diagnóstico
+- **diagnostic-garantias.php**: Shortcode `[diagnostico_garantias customer_id=X product_id=Y]` para diagnosticar problemas de balance
+  - Muestra todas las garantías del cliente con sus items
+  - Indica si tienen `order_id` o es NULL
+  - Muestra fecha de orden y si está dentro del período válido
+  - Resalta en amarillo el producto específico que se está investigando
+  - Lista todas las órdenes del cliente con sus items
+- **clear-cache.php**: Script para forzar limpieza de caché después de deployments
+  - URL: `https://dominio.com/wp-content/plugins/WooCommerce-Garantias/clear-cache.php?token=CACHE_CLEAR_2025`
+  - Limpia OPcache y Realpath cache
+  - Verifica fechas de modificación de archivos
+  - Verifica que las clases y métodos nuevos existan
+  - Útil cuando un deploy no se refleja inmediatamente por caché de PHP
 
 ## Extensibilidad
 
