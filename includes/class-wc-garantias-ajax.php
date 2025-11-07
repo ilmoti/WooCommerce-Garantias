@@ -836,6 +836,11 @@ public static function get_order_info() {
                 // Obtener el order_id del ITEM
                 $item_order_id = $item['order_id'] ?? null;
 
+                // IGNORAR items sin order_id (datos antiguos o corruptos)
+                if (empty($item_order_id)) {
+                    continue;
+                }
+
                 // Solo contar items de LA ORDEN ESPECÍFICA que buscamos
                 if ($item_order_id != $order_id) {
                     continue;
