@@ -396,7 +396,281 @@ class WC_Garantias_Cupones {
             
             return $codigo_cupon;
         }
-        
+
         return false;
+    }
+
+    /**
+     * Obtener información completa de un cupón incluyendo estado y uso
+     *
+     * @param string $coupon_code Código del cupón
+     * @return array|false Array con información del cupón o false si no existe
+     */
+    public static function get_cupon_info($coupon_code) {
+        $coupon = new WC_Coupon($coupon_code);
+
+        if (!$coupon->get_id()) {
+            return false;
+        }
+
+        // Obtener información básica del cupón
+        $info = [
+            'id' => $coupon->get_id(),
+            'codigo' => $coupon_code,
+            'monto' => $coupon->get_amount(),
+            'tipo' => $coupon->get_discount_type(),
+            'descripcion' => $coupon->get_description(),
+            'usage_count' => $coupon->get_usage_count(),
+            'usage_limit' => $coupon->get_usage_limit(),
+            'fecha_creacion' => get_post_field('post_date', $coupon->get_id()),
+            'fecha_expiracion' => $coupon->get_date_expires() ? $coupon->get_date_expires()->date('Y-m-d H:i:s') : null,
+        ];
+
+        // Determinar estado del cupón
+        if ($info['usage_count'] > 0) {
+            $info['estado'] = 'canjeado';
+        } elseif ($info['fecha_expiracion'] && strtotime($info['fecha_expiracion']) < time()) {
+            $info['estado'] = 'expirado';
+        } else {
+            $info['estado'] = 'pendiente';
+        }
+
+        // Buscar la garantía asociada
+        $garantia = self::get_garantia_by_cupon($coupon_code);
+        if ($garantia) {
+            $info['garantia_id'] = $garantia->ID;
+            $info['garantia_codigo'] = get_post_meta($garantia->ID, '_codigo_unico', true);
+            $info['cliente_id'] = get_post_meta($garantia->ID, '_cliente', true);
+            $info['cupon_items'] = get_post_meta($garantia->ID, '_cupon_items', true) ?: [];
+        }
+
+        // Si fue canjeado, buscar la orden donde se usó
+        if ($info['estado'] === 'canjeado') {
+            $order_info = self::get_order_by_cupon($coupon_code);
+            if ($order_info) {
+                $info['order_id'] = $order_info['order_id'];
+                $info['fecha_canje'] = $order_info['fecha_canje'];
+                $info['order_status'] = $order_info['order_status'];
+            }
+        }
+
+        return $info;
+    }
+
+    /**
+     * Obtener garantía asociada a un cupón
+     *
+     * @param string $coupon_code Código del cupón
+     * @return WP_Post|false Post de la garantía o false
+     */
+    public static function get_garantia_by_cupon($coupon_code) {
+        // Buscar en _cupon_generado
+        $garantias = get_posts([
+            'post_type' => 'garantia',
+            'post_status' => 'publish',
+            'meta_query' => [
+                [
+                    'key' => '_cupon_generado',
+                    'value' => $coupon_code,
+                    'compare' => '='
+                ]
+            ],
+            'posts_per_page' => 1
+        ]);
+
+        if (!empty($garantias)) {
+            return $garantias[0];
+        }
+
+        // Si no se encuentra, buscar en cupones adicionales
+        $garantias = get_posts([
+            'post_type' => 'garantia',
+            'post_status' => 'publish',
+            'posts_per_page' => -1
+        ]);
+
+        foreach ($garantias as $garantia) {
+            $cupones_adicionales = get_post_meta($garantia->ID, '_cupones_adicionales', true) ?: [];
+            foreach ($cupones_adicionales as $cupon_adicional) {
+                if ($cupon_adicional['codigo'] === $coupon_code) {
+                    return $garantia;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Obtener orden donde se usó un cupón
+     *
+     * @param string $coupon_code Código del cupón
+     * @return array|false Array con order_id, fecha_canje y order_status o false
+     */
+    public static function get_order_by_cupon($coupon_code) {
+        global $wpdb;
+
+        // Buscar en order items (tabla de cupones usados)
+        $query = "
+            SELECT oi.order_id, p.post_date, p.post_status
+            FROM {$wpdb->prefix}woocommerce_order_items oi
+            INNER JOIN {$wpdb->posts} p ON oi.order_id = p.ID
+            WHERE oi.order_item_type = 'coupon'
+            AND oi.order_item_name = %s
+            ORDER BY p.post_date DESC
+            LIMIT 1
+        ";
+
+        $result = $wpdb->get_row($wpdb->prepare($query, $coupon_code));
+
+        if ($result) {
+            return [
+                'order_id' => $result->order_id,
+                'fecha_canje' => $result->post_date,
+                'order_status' => $result->post_status
+            ];
+        }
+
+        return false;
+    }
+
+    /**
+     * Obtener todos los cupones de un cliente
+     *
+     * @param int $customer_id ID del cliente
+     * @param string $filtro_estado Filtrar por estado: 'todos', 'pendiente', 'canjeado', 'expirado'
+     * @return array Array de información de cupones
+     */
+    public static function get_cupones_cliente($customer_id, $filtro_estado = 'todos') {
+        // Buscar garantías del cliente
+        $garantias = get_posts([
+            'post_type' => 'garantia',
+            'post_status' => 'publish',
+            'meta_query' => [
+                [
+                    'key' => '_cliente',
+                    'value' => $customer_id,
+                    'compare' => '='
+                ]
+            ],
+            'posts_per_page' => -1,
+            'orderby' => 'date',
+            'order' => 'DESC'
+        ]);
+
+        $cupones = [];
+
+        foreach ($garantias as $garantia) {
+            // Cupón principal
+            $cupon_codigo = get_post_meta($garantia->ID, '_cupon_generado', true);
+            if ($cupon_codigo) {
+                $info = self::get_cupon_info($cupon_codigo);
+                if ($info && ($filtro_estado === 'todos' || $info['estado'] === $filtro_estado)) {
+                    $cupones[] = $info;
+                }
+            }
+
+            // Cupones adicionales
+            $cupones_adicionales = get_post_meta($garantia->ID, '_cupones_adicionales', true) ?: [];
+            foreach ($cupones_adicionales as $cupon_adicional) {
+                $info = self::get_cupon_info($cupon_adicional['codigo']);
+                if ($info && ($filtro_estado === 'todos' || $info['estado'] === $filtro_estado)) {
+                    $cupones[] = $info;
+                }
+            }
+        }
+
+        return $cupones;
+    }
+
+    /**
+     * Obtener estadísticas de cupones (para admin)
+     *
+     * @param array $args Argumentos de filtrado (fecha_desde, fecha_hasta, cliente_id)
+     * @return array Estadísticas de cupones
+     */
+    public static function get_cupones_stats($args = []) {
+        $fecha_desde = $args['fecha_desde'] ?? date('Y-m-01');
+        $fecha_hasta = $args['fecha_hasta'] ?? date('Y-m-d');
+        $cliente_id = $args['cliente_id'] ?? null;
+
+        $query_args = [
+            'post_type' => 'garantia',
+            'post_status' => 'publish',
+            'date_query' => [
+                [
+                    'after' => $fecha_desde,
+                    'before' => $fecha_hasta,
+                    'inclusive' => true
+                ]
+            ],
+            'posts_per_page' => -1
+        ];
+
+        if ($cliente_id) {
+            $query_args['meta_query'] = [
+                [
+                    'key' => '_cliente',
+                    'value' => $cliente_id,
+                    'compare' => '='
+                ]
+            ];
+        }
+
+        $garantias = get_posts($query_args);
+
+        $stats = [
+            'total' => 0,
+            'pendientes' => 0,
+            'canjeados' => 0,
+            'expirados' => 0,
+            'monto_total' => 0,
+            'monto_canjeado' => 0,
+            'monto_pendiente' => 0,
+        ];
+
+        foreach ($garantias as $garantia) {
+            // Cupón principal
+            $cupon_codigo = get_post_meta($garantia->ID, '_cupon_generado', true);
+            if ($cupon_codigo) {
+                $info = self::get_cupon_info($cupon_codigo);
+                if ($info) {
+                    $stats['total']++;
+                    $stats['monto_total'] += $info['monto'];
+
+                    if ($info['estado'] === 'pendiente') {
+                        $stats['pendientes']++;
+                        $stats['monto_pendiente'] += $info['monto'];
+                    } elseif ($info['estado'] === 'canjeado') {
+                        $stats['canjeados']++;
+                        $stats['monto_canjeado'] += $info['monto'];
+                    } elseif ($info['estado'] === 'expirado') {
+                        $stats['expirados']++;
+                    }
+                }
+            }
+
+            // Cupones adicionales
+            $cupones_adicionales = get_post_meta($garantia->ID, '_cupones_adicionales', true) ?: [];
+            foreach ($cupones_adicionales as $cupon_adicional) {
+                $info = self::get_cupon_info($cupon_adicional['codigo']);
+                if ($info) {
+                    $stats['total']++;
+                    $stats['monto_total'] += $info['monto'];
+
+                    if ($info['estado'] === 'pendiente') {
+                        $stats['pendientes']++;
+                        $stats['monto_pendiente'] += $info['monto'];
+                    } elseif ($info['estado'] === 'canjeado') {
+                        $stats['canjeados']++;
+                        $stats['monto_canjeado'] += $info['monto'];
+                    } elseif ($info['estado'] === 'expirado') {
+                        $stats['expirados']++;
+                    }
+                }
+            }
+        }
+
+        return $stats;
     }
 }

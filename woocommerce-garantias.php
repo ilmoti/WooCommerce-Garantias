@@ -35,6 +35,7 @@ $includes = [
     'includes/class-wc-garantias-admin-metabox.php' ,
     'includes/class-wc-garantias-notifications.php' ,
     'includes/class-wc-garantias-cupones.php',
+    'includes/admin/class-wc-garantias-admin-cupones.php',
     'includes/class-wc-garantias-etiqueta.php',
     'includes/class-wc-garantias-whatsapp.php',
     'includes/class-wc-garantias-rma.php',
@@ -77,6 +78,11 @@ if ( class_exists( 'WC_Garantias_Customer' ) ) {
 // Inicializar manejo de cupones
 if ( class_exists( 'WC_Garantias_Cupones' ) ) {
     WC_Garantias_Cupones::init();
+}
+
+// Inicializar admin de cupones
+if ( class_exists( 'WC_Garantias_Admin_Cupones' ) ) {
+    WC_Garantias_Admin_Cupones::init();
 }
 
 // Asegura las funcionalidades AJAX!
@@ -128,6 +134,17 @@ add_action('wc_garantias_check_timeouts', function() {
 // Limpiar cron al desactivar
 register_deactivation_hook(__FILE__, function() {
     wp_clear_scheduled_hook('wc_garantias_check_timeouts');
+});
+
+// Hook de activación para registrar endpoints
+register_activation_hook(__FILE__, function() {
+    // Registrar endpoints
+    if (class_exists('WC_Garantias_Customer')) {
+        WC_Garantias_Customer::add_garantias_endpoint();
+        WC_Garantias_Customer::add_cupones_endpoint();
+    }
+    // Flush rewrite rules
+    flush_rewrite_rules();
 });
 
 /**
