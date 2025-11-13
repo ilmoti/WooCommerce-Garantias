@@ -25,7 +25,8 @@ class WC_Garantias_Customer {
         $logout = $items['customer-logout'];
         unset( $items['customer-logout'] );
         $items['garantias'] = 'Mis Garantías';
-        $items['cupones-garantia'] = 'Cupones';
+        // NO agregar "Cupones" al menú principal - será un tab interno
+        // $items['cupones-garantia'] = 'Cupones';
         $items['customer-logout'] = $logout;
         return $items;
     }

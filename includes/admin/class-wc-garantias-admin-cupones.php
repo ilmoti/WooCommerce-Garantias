@@ -18,7 +18,7 @@ class WC_Garantias_Admin_Cupones {
      */
     public static function add_menu_page() {
         add_submenu_page(
-            'wc-garantias',
+            'wc-garantias-dashboard',
             'Cupones de Garantías',
             'Cupones',
             'manage_woocommerce',

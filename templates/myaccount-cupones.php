@@ -277,8 +277,46 @@ foreach ($cupones as $cupon) {
 
 <div class="cupones-container">
     <div class="cupones-header">
-        <h2>Mis Cupones de Garantía</h2>
-        <p style="color: #666;">Aquí puedes ver todos tus cupones generados por garantías aprobadas.</p>
+        <h2 style="text-align: center; margin-bottom: 20px;">MIS GARANTÍAS</h2>
+
+        <!-- Menú de navegación de tabs -->
+        <div class="garantias-nav-tabs" style="
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 0;
+        ">
+            <a href="<?php echo esc_url(wc_get_endpoint_url('garantias', '', wc_get_page_permalink('myaccount'))); ?>"
+               class="nav-tab"
+               style="
+                   padding: 12px 30px;
+                   text-decoration: none;
+                   color: #666;
+                   font-weight: 500;
+                   border-bottom: 3px solid transparent;
+                   transition: all 0.3s;
+               "
+               onmouseover="this.style.color='#667eea'; this.style.borderBottomColor='#667eea';"
+               onmouseout="this.style.color='#666'; this.style.borderBottomColor='transparent';">
+                Mis Garantías
+            </a>
+            <a href="<?php echo esc_url(wc_get_endpoint_url('cupones-garantia', '', wc_get_page_permalink('myaccount'))); ?>"
+               class="nav-tab active"
+               style="
+                   padding: 12px 30px;
+                   text-decoration: none;
+                   color: #667eea;
+                   font-weight: 600;
+                   border-bottom: 3px solid #667eea;
+                   transition: all 0.3s;
+               ">
+                Mis Cupones
+            </a>
+        </div>
+
+        <p style="color: #666; text-align: center; margin-bottom: 20px;">Aquí puedes ver todos tus cupones generados por garantías aprobadas.</p>
     </div>
 
     <!-- Stats Cards -->
