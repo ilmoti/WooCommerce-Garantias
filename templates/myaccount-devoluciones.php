@@ -138,7 +138,12 @@ foreach ($orders as $order) {
                         </thead>
                         <tbody>
                             <?php foreach ($productos_devolucion as $pid => $data): ?>
-                                <?php 
+                                <?php
+                                // Verificar que el producto existe
+                                if (!$data['producto'] || !is_object($data['producto'])) {
+                                    continue; // Saltar productos eliminados
+                                }
+
                                 // Verificar si el producto empieza con RMA y saltarlo
                                 if (stripos($data['producto']->get_name(), 'RMA') === 0) {
                                     continue;
