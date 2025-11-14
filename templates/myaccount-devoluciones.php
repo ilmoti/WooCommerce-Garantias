@@ -79,6 +79,7 @@ foreach ($orders as $order) {
             if (!isset($productos_devolucion[$pid])) {
                 $productos_devolucion[$pid] = [
                     'producto' => wc_get_product($pid),
+                    'producto_nombre' => $item->get_name(), // Nombre desde la orden
                     'cantidad' => 0,
                     'cantidad_en_garantia' => 0,
                     'order_id' => $order->get_id(),
@@ -139,24 +140,30 @@ foreach ($orders as $order) {
                         <tbody>
                             <?php foreach ($productos_devolucion as $pid => $data): ?>
                                 <?php
-                                // Verificar que el producto existe
-                                if (!$data['producto'] || !is_object($data['producto'])) {
-                                    continue; // Saltar productos eliminados
+                                // Obtener nombre del producto (desde orden o desde WC)
+                                $nombre_producto = $data['producto_nombre'];
+
+                                // Si el producto existe en WC, verificar que no sea RMA
+                                if ($data['producto'] && is_object($data['producto'])) {
+                                    $nombre_producto = $data['producto']->get_name();
                                 }
 
                                 // Verificar si el producto empieza con RMA y saltarlo
-                                if (stripos($data['producto']->get_name(), 'RMA') === 0) {
+                                if (stripos($nombre_producto, 'RMA') === 0) {
                                     continue;
                                 }
                                 ?>
                                 <tr style="border-bottom: 1px solid #f1f3f4;">
                                     <td style="padding: 15px 10px;">
                                         <label style="display: flex; align-items: center; cursor: pointer;">
-                                            <input type="checkbox" 
-                                                   class="producto-check" 
+                                            <input type="checkbox"
+                                                   class="producto-check"
                                                    data-producto-id="<?php echo $pid; ?>"
                                                    style="margin-right: 10px;">
-                                            <?php echo esc_html($data['producto']->get_name()); ?>
+                                            <?php echo esc_html($nombre_producto); ?>
+                                            <?php if (!$data['producto'] || !is_object($data['producto'])): ?>
+                                                <span style="margin-left: 8px; font-size: 11px; background: #ffc107; color: #000; padding: 2px 6px; border-radius: 3px;">Producto eliminado</span>
+                                            <?php endif; ?>
                                         </label>
                                     </td>
                                     <td style="text-align: center; padding: 15px 10px;">
